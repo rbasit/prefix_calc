@@ -1,16 +1,12 @@
 #lang racket
 (require "mode.rkt")
 
-;; -----------------------------
 ;; Tokenize user input
-;; -----------------------------
 (define (tokenize input)
   (filter (λ (x) (not (string=? x "")))
           (regexp-split #px"\\s+" input)))
 
-;; -----------------------------
 ;; Helpers
-;; -----------------------------
 (define (parse-number tok)
   (let ([n (string->number tok)])
     (if n
@@ -23,10 +19,9 @@
       (list-ref (reverse hist) (sub1 id))
       (error 'bad-history)))
 
-;; -----------------------------
 ;; Recursive prefix evaluator
 ;; Returns: (list value remaining-tokens)
-;; -----------------------------
+
 (define (eval-expr tokens history)
   (cond
     [(null? tokens) (error 'invalid-expr)]
@@ -69,15 +64,12 @@
        [else
         (list (parse-number token) rest)])]))
 
-;; -----------------------------
+
 ;; Printing helper (real->double-flonum for output only)
-;; -----------------------------
 (define (print-result id value)
   (displayln (format "~a: ~a" id (real->double-flonum value))))
 
-;; -----------------------------
 ;; Interactive / Batch REPL
-;; -----------------------------
 (define (repl history)
   (when prompt? (display "> "))
   (flush-output)
@@ -103,7 +95,5 @@
              (displayln "Error: Invalid Expression")
              (repl history))))]))
 
-;; -----------------------------
 ;; Program Entry
-;; -----------------------------
 (repl '())
