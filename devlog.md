@@ -17,3 +17,8 @@ The goal is to create a prefix expression evaluator in Racket. The calculator mu
 - ### Plan for this session
 - Implement evaluator: +, *, /, -, numbers, $n.
 - Add REPL loop, history, error handling.
+
+- ### Reflection (end of session)
+- Finished evaluator + REPL; tested interactive/batch.
+- Found and fixed bracket mismatch in with-handlers.
+- Next: finalize README, edge-case tests, zip.
