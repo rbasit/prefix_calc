@@ -9,3 +9,7 @@ The goal is to create a prefix expression evaluator in Racket. The calculator mu
 - Write parser to tokenize prefix expressions
 - Implement evaluator (handles +, *, /, -, numbers, and $n history references)
 - Build main REPL loop that supports quit and history tracking
+
+## 2025-10-23 15:55
+### Thoughts so far
+- Mode detection wired via `mode.rkt` (`prompt?`).
