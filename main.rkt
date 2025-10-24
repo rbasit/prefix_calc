@@ -1,23 +1,60 @@
 #lang racket
 (require "mode.rkt")
 
-;; Tokenize user input
-(define (tokenize input)
-  (filter (λ (x) (not (string=? x "")))
-          (regexp-split #px"\\s+" input)))
+
+;; Tokenize supporting no spaces
+;; tokens: +  *  /  -  $<digits>  <digits>
+(define (tokenize s)
+  (define cs (string->list s))
+  (define (is-digit? c) (and c (char-numeric? c)))
+  (define (loop chars acc)
+    (cond
+      [(null? chars) (reverse acc)]
+      [else
+       (define c (car chars))
+       (cond
+         [(char-whitespace? c) (loop (cdr chars) acc)]
+
+         ;; Single-char operators: + * / -
+         [(or (char=? c #\+) (char=? c #\*) (char=? c #\/) (char=? c #\-))
+          (loop (cdr chars) (cons (string c) acc))]
+
+         ;; $<digits> history reference
+         [(char=? c #\$)
+          (define-values (digits rest)
+            (let scan ([xs (cdr chars)] [buf '()])
+              (if (and (pair? xs) (is-digit? (car xs)))
+                  (scan (cdr xs) (cons (car xs) buf))
+                  (values (reverse buf) xs))))
+          (if (null? digits)
+              (error 'invalid-token)
+              (loop rest (cons (string-append "$" (list->string digits)) acc)))]
+
+         ;; Number: one or more digits
+         [(is-digit? c)
+          (define-values (digits rest)
+            (let scan ([xs chars] [buf '()])
+              (if (and (pair? xs) (is-digit? (car xs)))
+                  (scan (cdr xs) (cons (car xs) buf))
+                  (values (reverse buf) xs))))
+          (loop rest (cons (list->string digits) acc))]
+
+         [else (error 'invalid-token)])]))
+  (loop cs '()))
+
 
 ;; Helpers
+
 (define (parse-number tok)
   (let ([n (string->number tok)])
-    (if n
-        n
-        (error 'invalid-token))))
+    (if n n (error 'invalid-token))))
 
 (define (history-ref-by-id hist id)
   (if (and (integer? id) (>= id 1) (<= id (length hist)))
       ;; history id 1 is the first result ever produced
       (list-ref (reverse hist) (sub1 id))
       (error 'bad-history)))
+
 
 ;; Recursive prefix evaluator
 ;; Returns: (list value remaining-tokens)
@@ -65,13 +102,19 @@
         (list (parse-number token) rest)])]))
 
 
-;; Printing helper (real->double-flonum for output only)
+;; Printing helper: use display on the number
+;; (convert to flonum per spec)
+
 (define (print-result id value)
-  (displayln (format "~a: ~a" id (real->double-flonum value))))
+  (display id) (display ": ")
+  (display (real->double-flonum value))
+  (newline))
+
 
 ;; Interactive / Batch REPL
+
 (define (repl history)
-  (when prompt? (display "> "))
+  (when interactive? (display "> ")) ; use alias from mode.rkt
   (flush-output)
   (define input (read-line))
   (cond
@@ -94,6 +137,7 @@
            (begin
              (displayln "Error: Invalid Expression")
              (repl history))))]))
+
 
 ;; Program Entry
 (repl '())
